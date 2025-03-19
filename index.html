@@ -1,11 +1,169 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Filterable and Sortable Table</title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-  <script type="module" src="/main.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script>
+    $(document).ready(function(){
+      // Search functionality
+      $("#myInput").on("keyup", function() {
+        var value = $(this).val().toLowerCase();
+        filterTable();
+      });
+
+      // Initialize pagination
+      let currentPage = 1;
+      let rowsPerPage = 10;
+      
+      // Initialize sorting
+      let currentSort = {
+        column: '',
+        direction: 'asc'
+      };
+
+      // Handle rows per page change
+      $("#rowsPerPage").on("change", function() {
+        rowsPerPage = parseInt($(this).val());
+        currentPage = 1;
+        updateTable();
+      });
+
+      // Handle pagination click
+      $(document).on('click', '.pagination-link', function(e) {
+        e.preventDefault();
+        if ($(this).hasClass('disabled')) return;
+        
+        if ($(this).attr('data-page') === 'prev') {
+          currentPage--;
+        } else if ($(this).attr('data-page') === 'next') {
+          currentPage++;
+        } else {
+          currentPage = parseInt($(this).attr('data-page'));
+        }
+        
+        updateTable();
+      });
+
+      // Handle sorting
+      $(".sortable").click(function() {
+        const column = parseInt($(this).data('column'));
+        
+        // Toggle direction if same column clicked
+        if (currentSort.column === column) {
+          currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.column = column;
+          currentSort.direction = 'asc';
+        }
+        
+        // Update sort icons
+        $(".sort-icon").removeClass("fa-sort-up fa-sort-down").addClass("fa-sort");
+        const iconClass = currentSort.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+        $(this).find(".sort-icon").removeClass("fa-sort").addClass(iconClass);
+        
+        updateTable();
+      });
+
+      // Filter and sort the table
+      function filterTable() {
+        const searchValue = $("#myInput").val().toLowerCase();
+        
+        // Filter rows based on search input
+        $("#myTable tr").each(function() {
+          const rowText = $(this).text().toLowerCase();
+          $(this).attr('data-visible', rowText.indexOf(searchValue) > -1 ? 'true' : 'false');
+        });
+        
+        updateTable();
+      }
+
+      // Sort the table
+      function sortTable() {
+        if (currentSort.column === '') return;
+        
+        const rows = $("#myTable tr").toArray();
+        const columnIndex = currentSort.column;
+        
+        const sortedRows = rows.sort(function(a, b) {
+          const aValue = $(a).find(`td:eq(${columnIndex})`).text().toLowerCase();
+          const bValue = $(b).find(`td:eq(${columnIndex})`).text().toLowerCase();
+          
+          if (aValue < bValue) return currentSort.direction === 'asc' ? -1 : 1;
+          if (aValue > bValue) return currentSort.direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+        
+        $("#myTable").empty().append(sortedRows);
+      }
+
+      // Update the table with pagination
+      function updateTable() {
+        sortTable();
+        
+        // Get visible rows
+        const visibleRows = $("#myTable tr[data-visible='true'], #myTable tr:not([data-visible])");
+        const totalRows = visibleRows.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPage);
+        
+        // Adjust current page if needed
+        if (currentPage > totalPages) {
+          currentPage = totalPages > 0 ? totalPages : 1;
+        }
+        
+        // Hide all rows first
+        $("#myTable tr").hide();
+        
+        // Show only rows for current page
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        
+        visibleRows.each(function(index) {
+          if (index >= start && index < end) {
+            $(this).show();
+          }
+        });
+        
+        // Update pagination UI
+        updatePagination(totalPages, totalRows);
+      }
+
+      // Update pagination controls
+      function updatePagination(totalPages, totalRows) {
+        let paginationHTML = `<div class="pagination-info">Menampilkan ${totalRows === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1} - ${Math.min(currentPage * rowsPerPage, totalRows)} dari ${totalRows} data</div>`;
+        
+        paginationHTML += '<div class="pagination-links">';
+        
+        // Previous button
+        const prevDisabled = currentPage === 1 ? 'disabled' : '';
+        paginationHTML += `<a href="#" class="pagination-link ${prevDisabled}" data-page="prev">&laquo;</a>`;
+        
+        // Page numbers
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        if (endPage - startPage + 1 < maxVisiblePages) {
+          startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+          const activeClass = i === currentPage ? 'active' : '';
+          paginationHTML += `<a href="#" class="pagination-link ${activeClass}" data-page="${i}">${i}</a>`;
+        }
+        
+        // Next button
+        const nextDisabled = currentPage === totalPages || totalPages === 0 ? 'disabled' : '';
+        paginationHTML += `<a href="#" class="pagination-link ${nextDisabled}" data-page="next">&raquo;</a>`;
+        
+        paginationHTML += '</div>';
+        
+        $("#pagination").html(paginationHTML);
+      }
+
+      // Initial table setup
+      updateTable();
+    });
+  </script>
   <style>
     table {
       font-family: arial, sans-serif;
@@ -17,125 +175,194 @@
       border: 1px solid #dddddd;
       text-align: left;
       padding: 8px;
-      cursor: pointer;
-      position: relative;
-    }
-
-    th:after {
-      position: absolute;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 0.8em;
-      color: #aaa;
-    }
-
-    th.asc:after {
-      content: "🔼"; /* Up arrow */
-    }
-
-    th.desc:after {
-      content: "🔽"; /* Down arrow */
     }
 
     tr:nth-child(even) {
       background-color: #dddddd;
     }
-
-    .pagination {
-      margin-top: 10px;
-      text-align: center;
-    }
-
-    .pagination button {
-      padding: 5px 10px;
-      margin: 0 5px;
+    
+    .sortable {
       cursor: pointer;
+      position: relative;
+    }
+    
+    .sortable:hover {
+      background-color: #f0f0f0;
+    }
+    
+    .sort-icon {
+      margin-left: 5px;
+    }
+    
+    .table-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .search-container {
+      flex: 1;
+      margin-right: 20px;
+    }
+    
+    #myInput {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    
+    .rows-per-page {
+      display: flex;
+      align-items: center;
+    }
+    
+    .rows-per-page select {
+      margin-left: 10px;
+      padding: 6px;
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 15px;
+      padding: 10px 0;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+    }
+    
+    .pagination-info {
+      font-size: 14px;
+    }
+    
+    .pagination-links {
+      display: flex;
+    }
+    
+    .pagination-link {
+      padding: 6px 12px;
+      margin: 0 3px;
+      text-decoration: none;
+      color: #333;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+    }
+    
+    .pagination-link.active {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    
+    .pagination-link.disabled {
+      color: #999;
+      cursor: not-allowed;
+    }
+    
+    .pagination-link:not(.disabled):hover {
+      background-color: #e9e9e9;
     }
   </style>
 </head>
 <body>
 
 <h2>Filterable Table</h2>
-<p>Type something in the input field to search the table:</p>
-<input type="text" id="myInput" placeholder="Search...">
-<br><br>
+<p>Type something in the input field to search the table for first names, last names or emails:</p>  
 
-<label for="rowsPerPage">Rows per page:</label>
-<select id="rowsPerPage">
-  <option value="5">5</option>
-  <option value="10">10</option>
-  <option value="20">20</option>
-  <option value="50">50</option>
-</select>
-<br><br>
+<div class="table-actions">
+  <div class="search-container">
+    <input id="myInput" type="text" placeholder="Search..">
+  </div>
+  <div class="rows-per-page">
+    <label>Baris per halaman:</label>
+    <select id="rowsPerPage">
+      <option value="5">5</option>
+      <option value="10" selected>10</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+  </div>
+</div>
 
 <table>
   <thead>
-  <tr>
-    <th data-column="firstname">Firstname</th>
-    <th data-column="lastname">Lastname</th>
-    <th data-column="email">Email</th>
-  </tr>
+    <tr>
+      <th class="sortable" data-column="0">
+        Firstname
+        <i class="fa-solid fa-sort sort-icon"></i>
+      </th>
+      <th class="sortable" data-column="1">
+        Lastname
+        <i class="fa-solid fa-sort sort-icon"></i>
+      </th>
+      <th class="sortable" data-column="2">
+        Email
+        <i class="fa-solid fa-sort sort-icon"></i>
+      </th>
+    </tr>
   </thead>
   <tbody id="myTable">
-  <tr>
-    <td>John</td>
-    <td>Doe</td>
-    <td>john@example.com</td>
-  </tr>
-  <tr>
-    <td>Mary</td>
-    <td>Moe</td>
-    <td>mary@mail.com</td>
-  </tr>
-  <tr>
-    <td>July</td>
-    <td>Dooley</td>
-    <td>july@greatstuff.com</td>
-  </tr>
-  <tr>
-    <td>Anja</td>
-    <td>Ravendale</td>
-    <td>a_r@test.com</td>
-  </tr>
-  <tr>
-    <td>Eve</td>
-    <td>Jackson</td>
-    <td>eve@example.com</td>
-  </tr>
-  <tr>
-    <td>Adam</td>
-    <td>Johnson</td>
-    <td>adam@mail.com</td>
-  </tr>
-  <tr>
-    <td>Bella</td>
-    <td>Anderson</td>
-    <td>bella@greatstuff.com</td>
-  </tr>
-  <tr>
-    <td>Ryan</td>
-    <td>Carter</td>
-    <td>ryan@test.com</td>
-  </tr>
-  <tr>
-    <td>Mia</td>
-    <td>Roberts</td>
-    <td>mia@example.com</td>
-  </tr>
-  <tr>
-    <td>David</td>
-    <td>Lee</td>
-    <td>david@mail.com</td>
-  </tr>
+    <tr>
+      <td>John</td>
+      <td>Doe</td>
+      <td>john@example.com</td>
+    </tr>
+    <tr>
+      <td>Mary</td>
+      <td>Moe</td>
+      <td>mary@mail.com</td>
+    </tr>
+    <tr>
+      <td>July</td>
+      <td>Dooley</td>
+      <td>july@greatstuff.com</td>
+    </tr>
+    <tr>
+      <td>Anja</td>
+      <td>Ravendale</td>
+      <td>a_r@test.com</td>
+    </tr>
+    <tr>
+      <td>Adit</td>
+      <td>Santoso</td>
+      <td>adit@example.com</td>
+    </tr>
+    <tr>
+      <td>Budi</td>
+      <td>Doremi</td>
+      <td>budi@mail.com</td>
+    </tr>
+    <tr>
+      <td>Citra</td>
+      <td>Kirana</td>
+      <td>citra@greatstuff.com</td>
+    </tr>
+    <tr>
+      <td>Dewi</td>
+      <td>Safitri</td>
+      <td>dewi@test.com</td>
+    </tr>
+    <tr>
+      <td>Eko</td>
+      <td>Purnomo</td>
+      <td>eko@example.net</td>
+    </tr>
+    <tr>
+      <td>Fitri</td>
+      <td>Wijaya</td>
+      <td>fitri@mail.net</td>
+    </tr>
+    <tr>
+      <td>Gunawan</td>
+      <td>Susanto</td>
+      <td>gunawan@example.org</td>
+    </tr>
   </tbody>
 </table>
 
-<div class="pagination">
-  <button id="prevPage">Previous</button>
-  <button id="nextPage">Next</button>
-</div>
+<div id="pagination" class="pagination"></div>
 
 </body>
 </html>
