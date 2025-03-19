@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filterable and Sortable Table</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  
+  <style>
+    table {
+      font-family: arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    td, th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    th:after {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.8em;
+      color: #aaa;
+    }
+
+    th.asc:after {
+      content: "🔼"; /* Up arrow */
+    }
+
+    th.desc:after {
+      content: "🔽"; /* Down arrow */
+    }
+
+    tr:nth-child(even) {
+      background-color: #dddddd;
+    }
+
+    .pagination {
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .pagination button {
+      padding: 5px 10px;
+      margin: 0 5px;
+      cursor: pointer;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/index-fd0eda7f.js"></script>
+</head>
+<body>
+
+<h2>Filterable Table</h2>
+<p>Type something in the input field to search the table:</p>
+<input type="text" id="myInput" placeholder="Search...">
+<br><br>
+
+<label for="rowsPerPage">Rows per page:</label>
+<select id="rowsPerPage">
+  <option value="5">5</option>
+  <option value="10">10</option>
+  <option value="20">20</option>
+  <option value="50">50</option>
+</select>
+<br><br>
+
+<table>
+  <thead>
+  <tr>
+    <th data-column="firstname">Firstname</th>
+    <th data-column="lastname">Lastname</th>
+    <th data-column="email">Email</th>
+  </tr>
+  </thead>
+  <tbody id="myTable">
+  <tr>
+    <td>John</td>
+    <td>Doe</td>
+    <td>john@example.com</td>
+  </tr>
+  <tr>
+    <td>Mary</td>
+    <td>Moe</td>
+    <td>mary@mail.com</td>
+  </tr>
+  <tr>
+    <td>July</td>
+    <td>Dooley</td>
+    <td>july@greatstuff.com</td>
+  </tr>
+  <tr>
+    <td>Anja</td>
+    <td>Ravendale</td>
+    <td>a_r@test.com</td>
+  </tr>
+  <tr>
+    <td>Eve</td>
+    <td>Jackson</td>
+    <td>eve@example.com</td>
+  </tr>
+  <tr>
+    <td>Adam</td>
+    <td>Johnson</td>
+    <td>adam@mail.com</td>
+  </tr>
+  <tr>
+    <td>Bella</td>
+    <td>Anderson</td>
+    <td>bella@greatstuff.com</td>
+  </tr>
+  <tr>
+    <td>Ryan</td>
+    <td>Carter</td>
+    <td>ryan@test.com</td>
+  </tr>
+  <tr>
+    <td>Mia</td>
+    <td>Roberts</td>
+    <td>mia@example.com</td>
+  </tr>
+  <tr>
+    <td>David</td>
+    <td>Lee</td>
+    <td>david@mail.com</td>
+  </tr>
+  </tbody>
+</table>
+
+<div class="pagination">
+  <button id="prevPage">Previous</button>
+  <button id="nextPage">Next</button>
+</div>
+
+</body>
+</html>
